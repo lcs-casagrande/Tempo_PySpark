@@ -1,0 +1,56 @@
+#intalar java
+!apt-get install openjdk-8-jdk-headless -qq > /dev/null
+#baixar a versão mais recente do spark
+!wget -q https://dlcdn.apache.org/spark/spark-3.3.0/spark-3.3.0-bin-hadoop2.tgz
+#deszipar o spark
+!tar xf /content/spark-3.3.0-bin-hadoop2.tgz
+#criar as variaveis de ambiente
+import os
+os.environ["JAVA_HOME"] = "/usr/lib/jvm/java-8-openjdk-amd64"
+os.environ['SPARK_HOME'] = '/content/spark-3.3.0-bin-hadoop2'
+#Instalar a lib findspark que a ajuda a localizar o Spark no sistema e importá-lo como uma
+!pip install -q findspark
+import findspark
+findspark.init()
+# Buscar previsão do tempo para as cidades
+# TODO
+# Criar data frame com as previsões
+# TODO
+# Criar view com as previsões
+# TODO
+#Criar spark session
+from pyspark.sql import SparkSession
+spark = SparkSession.builder \
+.master("local") \
+.appName("python_do_tempo") \
+.getOrCreate()
+! pip install pyowm
+!pip install requests
+import requests
+link_cidade = 'https://servicodados.ibge.gov.br/api/v1/localidades/mesorregioes/3513/munic
+19/10/22, 17:12 Cópia de TempoDataside.ipynb - Colaboratory
+https://colab.research.google.com/drive/1GupddhqJeoflWTBojS6c6RI5Q7yRHcdd#scrollTo=uhyfK2-Bx2MU&printMode=true 2/3
+requisicao_cidades = requests.get(link_cidade)
+cidades_dic = (requisicao_cidades.json())
+print(len(cidades_dic))
+api_key = '9f491f050ea538d2921dec7ca8b878c8'
+for nome in range(len(cidades_dic)):
+cidade = (cidades_dic[nome]['nome'])
+requisicao = requests.get(link)
+requisicao_dic = (requisicao.json())
+descricao = requisicao_dic['weather'][0]['description']
+temperatura = requisicao_dic['main']['temp']
+print(descricao,f'{temperatura:.0f}ºc')
+link = f'https://api.openweathermap.org/data/2.5/weather?q={cidade}&appid={api_key}&lang
+print(cidade)
+# Buscar cidades do Vale do Paraíba
+# TODO
+# Criar data frame com as cidades
+# TODO
+# Criar view com as cidades
+# TODO
+# Criar DF da Tabela 1
+# TODO
+# Criar DF da Tabela 2
+# TODO
+# Exportar CSVs
