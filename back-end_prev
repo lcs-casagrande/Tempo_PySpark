@@ -1,56 +1,706 @@
-#intalar java
-!apt-get install openjdk-8-jdk-headless -qq > /dev/null
-#baixar a versão mais recente do spark
-!wget -q https://dlcdn.apache.org/spark/spark-3.3.0/spark-3.3.0-bin-hadoop2.tgz
-#deszipar o spark
-!tar xf /content/spark-3.3.0-bin-hadoop2.tgz
-#criar as variaveis de ambiente
-import os
-os.environ["JAVA_HOME"] = "/usr/lib/jvm/java-8-openjdk-amd64"
-os.environ['SPARK_HOME'] = '/content/spark-3.3.0-bin-hadoop2'
-#Instalar a lib findspark que a ajuda a localizar o Spark no sistema e importá-lo como uma
-!pip install -q findspark
-import findspark
-findspark.init()
-# Buscar previsão do tempo para as cidades
-# TODO
-# Criar data frame com as previsões
-# TODO
-# Criar view com as previsões
-# TODO
-#Criar spark session
-from pyspark.sql import SparkSession
-spark = SparkSession.builder \
-.master("local") \
-.appName("python_do_tempo") \
-.getOrCreate()
-! pip install pyowm
-!pip install requests
-import requests
-link_cidade = 'https://servicodados.ibge.gov.br/api/v1/localidades/mesorregioes/3513/munic
-19/10/22, 17:12 Cópia de TempoDataside.ipynb - Colaboratory
-https://colab.research.google.com/drive/1GupddhqJeoflWTBojS6c6RI5Q7yRHcdd#scrollTo=uhyfK2-Bx2MU&printMode=true 2/3
-requisicao_cidades = requests.get(link_cidade)
-cidades_dic = (requisicao_cidades.json())
-print(len(cidades_dic))
-api_key = '9f491f050ea538d2921dec7ca8b878c8'
-for nome in range(len(cidades_dic)):
-cidade = (cidades_dic[nome]['nome'])
-requisicao = requests.get(link)
-requisicao_dic = (requisicao.json())
-descricao = requisicao_dic['weather'][0]['description']
-temperatura = requisicao_dic['main']['temp']
-print(descricao,f'{temperatura:.0f}ºc')
-link = f'https://api.openweathermap.org/data/2.5/weather?q={cidade}&appid={api_key}&lang
-print(cidade)
-# Buscar cidades do Vale do Paraíba
-# TODO
-# Criar data frame com as cidades
-# TODO
-# Criar view com as cidades
-# TODO
-# Criar DF da Tabela 1
-# TODO
-# Criar DF da Tabela 2
-# TODO
-# Exportar CSVs
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "provenance": [],
+      "collapsed_sections": []
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "code",
+      "source": [
+        "#intalar java\n",
+        "!apt-get install openjdk-8-jdk-headless -qq > /dev/null"
+      ],
+      "metadata": {
+        "id": "OVWRC1tWZ5_6"
+      },
+      "execution_count": 2,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "!pip install pandas"
+      ],
+      "metadata": {
+        "id": "Tae3PI3nNeOG",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "f0b343ee-fd5b-4af1-f9b0-223b7d9b0570"
+      },
+      "execution_count": 3,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Looking in indexes: https://pypi.org/simple, https://us-python.pkg.dev/colab-wheels/public/simple/\n",
+            "Requirement already satisfied: pandas in /usr/local/lib/python3.7/dist-packages (1.3.5)\n",
+            "Requirement already satisfied: python-dateutil>=2.7.3 in /usr/local/lib/python3.7/dist-packages (from pandas) (2.8.2)\n",
+            "Requirement already satisfied: numpy>=1.17.3 in /usr/local/lib/python3.7/dist-packages (from pandas) (1.21.6)\n",
+            "Requirement already satisfied: pytz>=2017.3 in /usr/local/lib/python3.7/dist-packages (from pandas) (2022.4)\n",
+            "Requirement already satisfied: six>=1.5 in /usr/local/lib/python3.7/dist-packages (from python-dateutil>=2.7.3->pandas) (1.15.0)\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "#baixar a versão mais recente do spark\n",
+        "!wget -q https://dlcdn.apache.org/spark/spark-3.3.0/spark-3.3.0-bin-hadoop2.tgz"
+      ],
+      "metadata": {
+        "id": "fQU81AhvZ7_K"
+      },
+      "execution_count": 4,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "#deszipar o spark\n",
+        "!tar xf /content/spark-3.3.0-bin-hadoop2.tgz"
+      ],
+      "metadata": {
+        "id": "n-cwzqqXZ96q"
+      },
+      "execution_count": 5,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "#criar as variaveis de ambiente\n",
+        "import os \n",
+        "os.environ[\"JAVA_HOME\"] = \"/usr/lib/jvm/java-8-openjdk-amd64\"\n",
+        "os.environ['SPARK_HOME'] = '/content/spark-3.3.0-bin-hadoop2'"
+      ],
+      "metadata": {
+        "id": "WGAIBo8uZ_4a"
+      },
+      "execution_count": 6,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "#Instalar a lib findspark que a ajuda a localizar o Spark no sistema e importá-lo como uma biblioteca regular. \n",
+        "!pip install -q findspark"
+      ],
+      "metadata": {
+        "id": "lDVzGXTkaBoC"
+      },
+      "execution_count": 7,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "import findspark\n",
+        "findspark.init()\n",
+        "\n"
+      ],
+      "metadata": {
+        "id": "Nip-tclZ0DlD"
+      },
+      "execution_count": 8,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "\n",
+        "\n",
+        "# Criar data frame com as previsões\n",
+        "# TODO\n",
+        "\n",
+        "# Criar view com as previsões\n",
+        "# TODO"
+      ],
+      "metadata": {
+        "id": "_IXmAWDS0HkV"
+      },
+      "execution_count": 9,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "#Criar spark session\n",
+        "from pyspark.sql import SparkSession\n",
+        "spark = SparkSession.builder \\\n",
+        "      .master(\"local\") \\\n",
+        "      .appName(\"python_do_tempo\") \\\n",
+        "      .getOrCreate()"
+      ],
+      "metadata": {
+        "id": "Lr8yUd328AV5"
+      },
+      "execution_count": 10,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "! pip install pyowm"
+      ],
+      "metadata": {
+        "id": "mC8zazjpmNiI",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "afb692a4-981d-43fe-b66d-42943fb5e4fe"
+      },
+      "execution_count": 11,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Looking in indexes: https://pypi.org/simple, https://us-python.pkg.dev/colab-wheels/public/simple/\n",
+            "Requirement already satisfied: pyowm in /usr/local/lib/python3.7/dist-packages (3.3.0)\n",
+            "Requirement already satisfied: PySocks<2,>=1.7.1 in /usr/local/lib/python3.7/dist-packages (from pyowm) (1.7.1)\n",
+            "Requirement already satisfied: geojson<3,>=2.3.0 in /usr/local/lib/python3.7/dist-packages (from pyowm) (2.5.0)\n",
+            "Requirement already satisfied: requests<3,>=2.20.0 in /usr/local/lib/python3.7/dist-packages (from pyowm) (2.23.0)\n",
+            "Requirement already satisfied: urllib3!=1.25.0,!=1.25.1,<1.26,>=1.21.1 in /usr/local/lib/python3.7/dist-packages (from requests<3,>=2.20.0->pyowm) (1.24.3)\n",
+            "Requirement already satisfied: chardet<4,>=3.0.2 in /usr/local/lib/python3.7/dist-packages (from requests<3,>=2.20.0->pyowm) (3.0.4)\n",
+            "Requirement already satisfied: idna<3,>=2.5 in /usr/local/lib/python3.7/dist-packages (from requests<3,>=2.20.0->pyowm) (2.10)\n",
+            "Requirement already satisfied: certifi>=2017.4.17 in /usr/local/lib/python3.7/dist-packages (from requests<3,>=2.20.0->pyowm) (2022.9.24)\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "!pip install requests "
+      ],
+      "metadata": {
+        "id": "_l55-Hl9nGE8",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "9b73cd89-fbfb-40ca-975b-5f356e604ddb"
+      },
+      "execution_count": 12,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Looking in indexes: https://pypi.org/simple, https://us-python.pkg.dev/colab-wheels/public/simple/\n",
+            "Requirement already satisfied: requests in /usr/local/lib/python3.7/dist-packages (2.23.0)\n",
+            "Requirement already satisfied: urllib3!=1.25.0,!=1.25.1,<1.26,>=1.21.1 in /usr/local/lib/python3.7/dist-packages (from requests) (1.24.3)\n",
+            "Requirement already satisfied: certifi>=2017.4.17 in /usr/local/lib/python3.7/dist-packages (from requests) (2022.9.24)\n",
+            "Requirement already satisfied: idna<3,>=2.5 in /usr/local/lib/python3.7/dist-packages (from requests) (2.10)\n",
+            "Requirement already satisfied: chardet<4,>=3.0.2 in /usr/local/lib/python3.7/dist-packages (from requests) (3.0.4)\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "import requests "
+      ],
+      "metadata": {
+        "id": "zZdbxhuoqPl5"
+      },
+      "execution_count": 13,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Buscar cidades do Vale do Paraíba\n"
+      ],
+      "metadata": {
+        "id": "mqTOcQubTQSl"
+      },
+      "execution_count": 14,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "link_cidade = 'https://servicodados.ibge.gov.br/api/v1/localidades/mesorregioes/3513/municipios'"
+      ],
+      "metadata": {
+        "id": "2N2gQES0yPlo"
+      },
+      "execution_count": 15,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "requisicao_cidades = requests.get(link_cidade)"
+      ],
+      "metadata": {
+        "id": "9V1a_MwjyJgF"
+      },
+      "execution_count": 16,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "cidades_dic = (requisicao_cidades.json())"
+      ],
+      "metadata": {
+        "id": "U6qxO8fpyWsu"
+      },
+      "execution_count": 17,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Criar data frame com as cidades"
+      ],
+      "metadata": {
+        "id": "x7PHYHeBTVNm"
+      },
+      "execution_count": 18,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "import pandas as pd"
+      ],
+      "metadata": {
+        "id": "8vCS3bumQAOo"
+      },
+      "execution_count": 19,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "df = pd.DataFrame(cidades_dic)"
+      ],
+      "metadata": {
+        "id": "DOFs9OUMOpWj"
+      },
+      "execution_count": 20,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "df.to_csv('cidades_csv')"
+      ],
+      "metadata": {
+        "id": "0PzMwHxlPBRF"
+      },
+      "execution_count": 21,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "df_cid = spark.read.csv('cidades_csv', header = True, inferSchema=True)"
+      ],
+      "metadata": {
+        "id": "-JGODS9lQVoR"
+      },
+      "execution_count": 22,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Criar view com as cidades"
+      ],
+      "metadata": {
+        "id": "TLJehl9xTd2U"
+      },
+      "execution_count": 23,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "for nome in range(len(cidades_dic)):\n",
+        "  cidade = (cidades_dic[nome]['nome'])\n",
+        "  print(cidade)"
+      ],
+      "metadata": {
+        "id": "u22KNLghTgnq",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "b92b311b-ed32-41c6-f0bb-5b80bfa4d4c0"
+      },
+      "execution_count": 24,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Aparecida\n",
+            "Arapeí\n",
+            "Areias\n",
+            "Bananal\n",
+            "Caçapava\n",
+            "Cachoeira Paulista\n",
+            "Campos do Jordão\n",
+            "Canas\n",
+            "Caraguatatuba\n",
+            "Cruzeiro\n",
+            "Cunha\n",
+            "Guaratinguetá\n",
+            "Igaratá\n",
+            "Ilhabela\n",
+            "Jacareí\n",
+            "Jambeiro\n",
+            "Lagoinha\n",
+            "Lavrinhas\n",
+            "Lorena\n",
+            "Monteiro Lobato\n",
+            "Natividade da Serra\n",
+            "Paraibuna\n",
+            "Pindamonhangaba\n",
+            "Piquete\n",
+            "Potim\n",
+            "Queluz\n",
+            "Redenção da Serra\n",
+            "Roseira\n",
+            "Santa Branca\n",
+            "Santo Antônio do Pinhal\n",
+            "São Bento do Sapucaí\n",
+            "São José do Barreiro\n",
+            "São José dos Campos\n",
+            "São Luiz do Paraitinga\n",
+            "São Sebastião\n",
+            "Silveiras\n",
+            "Taubaté\n",
+            "Tremembé\n",
+            "Ubatuba\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "api_key = '9f491f050ea538d2921dec7ca8b878c8'"
+      ],
+      "metadata": {
+        "id": "H3gJD-zI22eB"
+      },
+      "execution_count": 25,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from datetime import datetime,timezone,timedelta,tzinfo,date\n",
+        "from dateutil import tz\n",
+        "import pytz"
+      ],
+      "metadata": {
+        "id": "4v8Bz28KzPrK"
+      },
+      "execution_count": 107,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [],
+      "metadata": {
+        "id": "ct_fYBxLVqvE"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "Cidade = []\n",
+        "CodigoDaCidade = []\n",
+        "Data  = []\n",
+        "Regiao  = []\n",
+        "Pais = []\n",
+        "Latitude  = []\n",
+        "Longigute = []\n",
+        "TemperaturaMaxima  = []\n",
+        "TemperaturaMinima = []\n",
+        "TemperaturaMedia = []\n",
+        "VaiChover = []\n",
+        "ChanceDeChuva = []\n",
+        "CondicaoDoTempo = []\n",
+        "NascerDoSol = []\n",
+        "PorDoSol = []\n",
+        "VelocidadeMaximaDoVento = []\n",
+        "cidade2=[]\n",
+        "_chuva=[]\n",
+        "_sol=[]\n",
+        "_map=[]"
+      ],
+      "metadata": {
+        "id": "ev0DR8onUmtH"
+      },
+      "execution_count": 125,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Buscar previsão do tempo para as cidades\n",
+        "for nome in range(len(cidades_dic)):\n",
+        "  city = (cidades_dic[nome]['nome'])\n",
+        "  link = f'https://api.openweathermap.org/data/2.5/forecast?q={city},br&appid={api_key}&lang=pt_br&cnt=3&units=metric'\n",
+        "  requisicao = requests.get(link)\n",
+        "  requisicao_dic = (requisicao.json())\n",
+        "  cont_chuva = cont_sol =dias_map= 0\n",
+        "  for dt in requisicao_dic['list'][2::8]:\n",
+        "    Cidade.append(city)\n",
+        "    cidade2.append(city)\n",
+        "    CodigoDaCidade.append(cidades_dic[0]['id'])\n",
+        "    Data.append(date.today())\n",
+        "    Regiao.append(cidades_dic[nome]['microrregiao']['mesorregiao']['UF']['regiao']['nome'])\n",
+        "    Pais.append(requisicao_dic['city']['country'])\n",
+        "    Latitude.append(requisicao_dic['city']['coord']['lat'])\n",
+        "    Longigute.append(requisicao_dic['city']['coord']['lon'])\n",
+        "    TempMin=(float(requisicao_dic['list'][0]['main']['temp_min']))\n",
+        "    TemperaturaMinima.append(TempMin)\n",
+        "    TempMax=(float(requisicao_dic['list'][0]['main']['temp_max']))\n",
+        "    TemperaturaMaxima.append(TempMax)\n",
+        "    TemperaturaMedia.append((TempMax+TempMin)/2)\n",
+        "    \n",
+        "    chuva = (float(requisicao_dic['list'][0]['pop']))\n",
+        "    if chuva > 0.5:\n",
+        "      VaiChover.append('Sim')\n",
+        "      cont_chuva+=1\n",
+        "    else:\n",
+        "      VaiChover.append('Não')\n",
+        "      cont_sol+=1\n",
+        "    dias_map+=1\n",
+        "    _chuva.append(cont_chuva)\n",
+        "    _sol.append(cont_sol)\n",
+        "    _map.append(dias_map)\n",
+        "    ChanceDeChuva.append((float(requisicao_dic['list'][0]['pop']*100)))\n",
+        "    CondicaoDoTempo.append(requisicao_dic['list'][0]['weather'][0]['description'])\n",
+        "    nascer = datetime.utcfromtimestamp((requisicao_dic['city']['sunrise'])).strftime('%H:%M:%S %z')\n",
+        "    NascerDoSol.append(nascer)\n",
+        "    por = datetime.utcfromtimestamp((requisicao_dic['city']['sunset'])).strftime('%H:%M:%S %z')\n",
+        "    PorDoSol.append(por)\n",
+        "    VelocidadeMaximaDoVento.append(requisicao_dic['list'][0]['wind']['speed'])\n",
+        "\n",
+        "\n"
+      ],
+      "metadata": {
+        "id": "uhyfK2-Bx2MU"
+      },
+      "execution_count": 126,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "tabela_1={'Cidade' : Cidade, 'CodigoDaCidade':CodigoDaCidade, 'Data':Data, 'Regiao': Regiao, 'Pais':Pais, 'Latitude':Latitude,\n",
+        "          'Longigute':Longigute, 'TemperaturaMaxima': TemperaturaMaxima, 'TemperaturaMinima': TemperaturaMinima, 'TemperaturaMedia': TemperaturaMedia,\n",
+        "          'VaiChover': VaiChover, 'ChanceDeChuva(%)': ChanceDeChuva, 'CondicaoDoTempo': CondicaoDoTempo, 'NascerDoSol': NascerDoSol,\n",
+        "          'PorDoSol': PorDoSol, 'VelocidadeMaximaDoVento(metro/s)' : VelocidadeMaximaDoVento}"
+      ],
+      "metadata": {
+        "id": "iL8D2JWc-VwB"
+      },
+      "execution_count": 127,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Criar DF da Tabela 1\n",
+        "df_tabela1 = pd.DataFrame(tabela_1)"
+      ],
+      "metadata": {
+        "id": "A6kiUkNuWJ2I"
+      },
+      "execution_count": 128,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "df_tabela1.to_csv('df_tabela1_csv')"
+      ],
+      "metadata": {
+        "id": "SH0p53Dt0F8D"
+      },
+      "execution_count": 129,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "df_tabela1 = spark.read.csv('df_tabela1_csv', header = True, inferSchema=True)"
+      ],
+      "metadata": {
+        "id": "1PGLoJlWWwmU"
+      },
+      "execution_count": 130,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "df_tabela1.show()"
+      ],
+      "metadata": {
+        "id": "XyAHrUNgzYqh",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "36e2b4c3-c871-46d9-9651-0d186e95a3a9"
+      },
+      "execution_count": 131,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "+---+------------------+--------------+-------------------+-------+----+--------+---------+-----------------+-----------------+----------------+---------+------------------+----------------+-------------------+-------------------+--------------------------------+\n",
+            "|_c0|            Cidade|CodigoDaCidade|               Data| Regiao|Pais|Latitude|Longigute|TemperaturaMaxima|TemperaturaMinima|TemperaturaMedia|VaiChover|  ChanceDeChuva(%)| CondicaoDoTempo|        NascerDoSol|           PorDoSol|VelocidadeMaximaDoVento(metro/s)|\n",
+            "+---+------------------+--------------+-------------------+-------+----+--------+---------+-----------------+-----------------+----------------+---------+------------------+----------------+-------------------+-------------------+--------------------------------+\n",
+            "|  0|         Aparecida|       3502507|2022-10-21 00:00:00|Sudeste|  BR|-22.8469| -45.2297|            18.78|            18.78|           18.78|      Não|               0.0|nuvens dispersas|2022-10-21 08:24:12|2022-10-21 21:06:54|                            1.28|\n",
+            "|  1|            Arapeí|       3502507|2022-10-21 00:00:00|Sudeste|  BR|-22.6739| -44.4478|            19.73|            19.73|           19.73|      Não|               0.0|nuvens dispersas|2022-10-21 08:21:14|2022-10-21 21:03:37|                            0.58|\n",
+            "|  2|            Areias|       3502507|2022-10-21 00:00:00|Sudeste|  BR|-19.4471| -44.1883|            22.73|            20.59|           21.66|      Não|              36.0|      chuva leve|2022-10-21 08:22:59|2022-10-21 20:59:47|                            3.51|\n",
+            "|  3|           Bananal|       3502507|2022-10-21 00:00:00|Sudeste|  BR|-22.6836| -44.3233|            19.88|            19.88|           19.88|      Não|               0.0|         nublado|2022-10-21 08:20:43|2022-10-21 21:03:08|                            0.73|\n",
+            "|  4|          Caçapava|       3502507|2022-10-21 00:00:00|Sudeste|  BR|-23.1008| -45.7069|            18.51|            18.51|           18.51|      Não|               0.0|nuvens dispersas|2022-10-21 08:25:53|2022-10-21 21:09:02|                             1.9|\n",
+            "|  5|Cachoeira Paulista|       3502507|2022-10-21 00:00:00|Sudeste|  BR| -22.665| -45.0094|            19.34|            19.34|           19.34|      Não|               0.0|nuvens dispersas|2022-10-21 08:23:29|2022-10-21 21:05:51|                            1.67|\n",
+            "|  6|  Campos do Jordão|       3502507|2022-10-21 00:00:00|Sudeste|  BR|-22.7394| -45.5914|            12.93|            12.93|           12.93|      Não|               0.0|nuvens dispersas|2022-10-21 08:25:45|2022-10-21 21:08:15|                            1.94|\n",
+            "|  7|             Canas|       3502507|2022-10-21 00:00:00|Sudeste|  BR|-22.7036| -45.0553|            19.25|            19.25|           19.25|      Não|               0.0|nuvens dispersas|2022-10-21 08:23:38|2022-10-21 21:06:04|                            1.64|\n",
+            "|  8|     Caraguatatuba|       3502507|2022-10-21 00:00:00|Sudeste|  BR|-23.6338| -45.4899|            21.43|            21.43|           21.43|      Não|               4.0|nuvens dispersas|2022-10-21 08:24:32|2022-10-21 21:08:39|                            2.45|\n",
+            "|  9|          Cruzeiro|       3502507|2022-10-21 00:00:00|Sudeste|  BR|-22.5761| -44.9628|            19.44|            19.44|           19.44|      Não|               0.0|nuvens dispersas|2022-10-21 08:23:22|2022-10-21 21:05:35|                            1.55|\n",
+            "| 10|             Cunha|       3502507|2022-10-21 00:00:00|Sudeste|  BR|-23.0744| -44.9597|            16.94|            16.94|           16.94|      Não|               1.0|       céu limpo|2022-10-21 08:22:55|2022-10-21 21:06:01|                            1.64|\n",
+            "| 11|     Guaratinguetá|       3502507|2022-10-21 00:00:00|Sudeste|  BR|-22.8164| -45.1925|            18.99|            18.99|           18.99|      Não|               0.0|nuvens dispersas|2022-10-21 08:24:05|2022-10-21 21:06:43|                            1.31|\n",
+            "| 12|           Igaratá|       3502507|2022-10-21 00:00:00|Sudeste|  BR|-23.2044| -46.1561|             17.8|             17.8|            17.8|      Não|               2.0|nuvens dispersas|2022-10-21 08:27:35|2022-10-21 21:10:56|                            1.59|\n",
+            "| 13|          Ilhabela|       3502507|2022-10-21 00:00:00|Sudeste|  BR|-23.7781| -45.3581|             21.6|             21.6|            21.6|      Não|28.999999999999996|      chuva leve|2022-10-21 08:23:53|2022-10-21 21:08:15|                            2.05|\n",
+            "| 14|           Jacareí|       3502507|2022-10-21 00:00:00|Sudeste|  BR|-23.3053| -45.9658|            19.09|            19.09|           19.09|      Não|               1.0|nuvens dispersas|2022-10-21 08:26:44|2022-10-21 21:10:15|                            1.82|\n",
+            "| 15|          Jambeiro|       3502507|2022-10-21 00:00:00|Sudeste|  BR|-23.2536| -45.6878|            17.49|            17.49|           17.49|      Não|               0.0|nuvens dispersas|2022-10-21 08:25:40|2022-10-21 21:09:06|                            2.25|\n",
+            "| 16|          Lagoinha|       3502507|2022-10-21 00:00:00|Sudeste|  BR|-16.7193| -42.5025|            20.43|            20.43|           20.43|      Não|               0.0|         nublado|2022-10-21 08:18:31|2022-10-21 20:50:46|                            0.93|\n",
+            "| 17|         Lavrinhas|       3502507|2022-10-21 00:00:00|Sudeste|  BR|-22.5708| -44.9022|            19.59|            19.59|           19.59|      Não|               0.0|nuvens dispersas|2022-10-21 08:23:08|2022-10-21 21:05:21|                            1.43|\n",
+            "| 18|            Lorena|       3502507|2022-10-21 00:00:00|Sudeste|  BR|-22.7308| -45.1247|            19.15|            19.15|           19.15|      Não|               0.0|nuvens dispersas|2022-10-21 08:23:53|2022-10-21 21:06:23|                            1.47|\n",
+            "| 19|   Monteiro Lobato|       3502507|2022-10-21 00:00:00|Sudeste|  BR|-22.9567| -45.8397|            17.93|            17.93|           17.93|      Não|               0.0|  algumas nuvens|2022-10-21 08:26:32|2022-10-21 21:09:26|                            1.86|\n",
+            "+---+------------------+--------------+-------------------+-------+----+--------+---------+-----------------+-----------------+----------------+---------+------------------+----------------+-------------------+-------------------+--------------------------------+\n",
+            "only showing top 20 rows\n",
+            "\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Criar DF da Tabela 2\n",
+        "tabela2={}\n",
+        "\n",
+        "tabela_2={'Cidade' : cidade2, 'QtdDiasVaiChover':_chuva, 'QtdDiasNaoVaiChover':_sol,'TotalDiasMapeados':_map}"
+      ],
+      "metadata": {
+        "id": "NdSWhFfo0K40"
+      },
+      "execution_count": 132,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Exportar CSVs\n",
+        "df_tabela2 = pd.DataFrame(tabela_2)\n",
+        "# TODO"
+      ],
+      "metadata": {
+        "id": "b7dNiTcK0MZF"
+      },
+      "execution_count": 133,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "df_tabela2.to_csv('df_tabela2_csv')"
+      ],
+      "metadata": {
+        "id": "As7IEbM3_4kb"
+      },
+      "execution_count": 134,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "df_tabela2 = spark.read.csv('/content/df_tabela2_csv', header = True, inferSchema=True)"
+      ],
+      "metadata": {
+        "id": "tplNK-wVADeO"
+      },
+      "execution_count": 135,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "df_tabela2.show()"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "Fc_0EsbvAFfW",
+        "outputId": "3f136616-2db6-4294-ccac-34ee692864af"
+      },
+      "execution_count": 136,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "+---+------------------+----------------+-------------------+-----------------+\n",
+            "|_c0|            Cidade|QtdDiasVaiChover|QtdDiasNaoVaiChover|TotalDiasMapeados|\n",
+            "+---+------------------+----------------+-------------------+-----------------+\n",
+            "|  0|         Aparecida|               0|                  1|                1|\n",
+            "|  1|            Arapeí|               0|                  1|                1|\n",
+            "|  2|            Areias|               0|                  1|                1|\n",
+            "|  3|           Bananal|               0|                  1|                1|\n",
+            "|  4|          Caçapava|               0|                  1|                1|\n",
+            "|  5|Cachoeira Paulista|               0|                  1|                1|\n",
+            "|  6|  Campos do Jordão|               0|                  1|                1|\n",
+            "|  7|             Canas|               0|                  1|                1|\n",
+            "|  8|     Caraguatatuba|               0|                  1|                1|\n",
+            "|  9|          Cruzeiro|               0|                  1|                1|\n",
+            "| 10|             Cunha|               0|                  1|                1|\n",
+            "| 11|     Guaratinguetá|               0|                  1|                1|\n",
+            "| 12|           Igaratá|               0|                  1|                1|\n",
+            "| 13|          Ilhabela|               0|                  1|                1|\n",
+            "| 14|           Jacareí|               0|                  1|                1|\n",
+            "| 15|          Jambeiro|               0|                  1|                1|\n",
+            "| 16|          Lagoinha|               0|                  1|                1|\n",
+            "| 17|         Lavrinhas|               0|                  1|                1|\n",
+            "| 18|            Lorena|               0|                  1|                1|\n",
+            "| 19|   Monteiro Lobato|               0|                  1|                1|\n",
+            "+---+------------------+----------------+-------------------+-----------------+\n",
+            "only showing top 20 rows\n",
+            "\n"
+          ]
+        }
+      ]
+    }
+  ]
+}
