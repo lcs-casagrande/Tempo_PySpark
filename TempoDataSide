@@ -1,0 +1,171 @@
+#intalar java
+!apt-get install openjdk-8-jdk-headless -qq > /dev/null
+
+!pip install pandas
+
+#baixar a versão mais recente do spark
+!wget -q https://dlcdn.apache.org/spark/spark-3.3.0/spark-3.3.0-bin-hadoop2.tgz
+
+#deszipar o spark
+!tar xf /content/spark-3.3.0-bin-hadoop2.tgz
+
+#criar as variaveis de ambiente
+import os 
+os.environ["JAVA_HOME"] = "/usr/lib/jvm/java-8-openjdk-amd64"
+os.environ['SPARK_HOME'] = '/content/spark-3.3.0-bin-hadoop2'
+
+#Instalar a lib findspark que a ajuda a localizar o Spark no sistema e importá-lo como uma biblioteca regular. 
+!pip install -q findspark
+
+import findspark
+findspark.init()
+
+
+
+
+
+# Criar data frame com as previsões
+# TODO
+
+# Criar view com as previsões
+# TODO
+
+#Criar spark session
+from pyspark.sql import SparkSession
+spark = SparkSession.builder \
+      .master("local") \
+      .appName("python_do_tempo") \
+      .getOrCreate()
+
+! pip install pyowm
+
+!pip install requests 
+
+import requests 
+
+# Buscar cidades do Vale do Paraíba
+
+
+link_cidade = 'https://servicodados.ibge.gov.br/api/v1/localidades/mesorregioes/3513/municipios'
+
+requisicao_cidades = requests.get(link_cidade)
+
+cidades_dic = (requisicao_cidades.json())
+
+# Criar data frame com as cidades
+
+import pandas as pd
+
+df = pd.DataFrame(cidades_dic)
+
+df.to_csv('cidades_csv')
+
+df_cid = spark.read.csv('cidades_csv', header = True, inferSchema=True)
+
+# Criar view com as cidades
+
+for nome in range(len(cidades_dic)):
+  cidade = (cidades_dic[nome]['nome'])
+  print(cidade)
+
+api_key = '9f491f050ea538d2921dec7ca8b878c8'
+
+from datetime import datetime,timezone,timedelta,tzinfo,date
+from dateutil import tz
+import pytz
+
+
+
+Cidade = []
+CodigoDaCidade = []
+Data  = []
+Regiao  = []
+Pais = []
+Latitude  = []
+Longigute = []
+TemperaturaMaxima  = []
+TemperaturaMinima = []
+TemperaturaMedia = []
+VaiChover = []
+ChanceDeChuva = []
+CondicaoDoTempo = []
+NascerDoSol = []
+PorDoSol = []
+VelocidadeMaximaDoVento = []
+cidade2=[]
+_chuva=[]
+_sol=[]
+_map=[]
+
+# Buscar previsão do tempo para as cidades
+for nome in range(len(cidades_dic)):
+  city = (cidades_dic[nome]['nome'])
+  link = f'https://api.openweathermap.org/data/2.5/forecast?q={city},br&appid={api_key}&lang=pt_br&cnt=3&units=metric'
+  requisicao = requests.get(link)
+  requisicao_dic = (requisicao.json())
+  cont_chuva = cont_sol =dias_map= 0
+  for dt in requisicao_dic['list'][2::8]:
+    Cidade.append(city)
+    cidade2.append(city)
+    CodigoDaCidade.append(cidades_dic[0]['id'])
+    Data.append(date.today())
+    Regiao.append(cidades_dic[nome]['microrregiao']['mesorregiao']['UF']['regiao']['nome'])
+    Pais.append(requisicao_dic['city']['country'])
+    Latitude.append(requisicao_dic['city']['coord']['lat'])
+    Longigute.append(requisicao_dic['city']['coord']['lon'])
+    TempMin=(float(requisicao_dic['list'][0]['main']['temp_min']))
+    TemperaturaMinima.append(TempMin)
+    TempMax=(float(requisicao_dic['list'][0]['main']['temp_max']))
+    TemperaturaMaxima.append(TempMax)
+    TemperaturaMedia.append((TempMax+TempMin)/2)
+    
+    chuva = (float(requisicao_dic['list'][0]['pop']))
+    if chuva > 0.5:
+      VaiChover.append('Sim')
+      cont_chuva+=1
+    else:
+      VaiChover.append('Não')
+      cont_sol+=1
+    dias_map+=1
+    _chuva.append(cont_chuva)
+    _sol.append(cont_sol)
+    _map.append(dias_map)
+    ChanceDeChuva.append((float(requisicao_dic['list'][0]['pop']*100)))
+    CondicaoDoTempo.append(requisicao_dic['list'][0]['weather'][0]['description'])
+    nascer = datetime.utcfromtimestamp((requisicao_dic['city']['sunrise'])).strftime('%H:%M:%S %z')
+    NascerDoSol.append(nascer)
+    por = datetime.utcfromtimestamp((requisicao_dic['city']['sunset'])).strftime('%H:%M:%S %z')
+    PorDoSol.append(por)
+    VelocidadeMaximaDoVento.append(requisicao_dic['list'][0]['wind']['speed'])
+
+
+
+
+tabela_1={'Cidade' : Cidade, 'CodigoDaCidade':CodigoDaCidade, 'Data':Data, 'Regiao': Regiao, 'Pais':Pais, 'Latitude':Latitude,
+          'Longigute':Longigute, 'TemperaturaMaxima': TemperaturaMaxima, 'TemperaturaMinima': TemperaturaMinima, 'TemperaturaMedia': TemperaturaMedia,
+          'VaiChover': VaiChover, 'ChanceDeChuva(%)': ChanceDeChuva, 'CondicaoDoTempo': CondicaoDoTempo, 'NascerDoSol': NascerDoSol,
+          'PorDoSol': PorDoSol, 'VelocidadeMaximaDoVento(metro/s)' : VelocidadeMaximaDoVento}
+
+# Criar DF da Tabela 1
+df_tabela1 = pd.DataFrame(tabela_1)
+
+df_tabela1.to_csv('df_tabela1_csv')
+
+df_tabela1 = spark.read.csv('df_tabela1_csv', header = True, inferSchema=True)
+
+df_tabela1.show()
+
+# Criar DF da Tabela 2
+tabela2={}
+
+tabela_2={'Cidade' : cidade2, 'QtdDiasVaiChover':_chuva, 'QtdDiasNaoVaiChover':_sol,'TotalDiasMapeados':_map}
+
+# Exportar CSVs
+df_tabela2 = pd.DataFrame(tabela_2)
+# TODO
+
+df_tabela2.to_csv('df_tabela2_csv')
+
+df_tabela2 = spark.read.csv('/content/df_tabela2_csv', header = True, inferSchema=True)
+
+df_tabela2.show()
