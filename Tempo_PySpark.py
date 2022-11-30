@@ -51,7 +51,7 @@ import requests
 # Buscar cidades do Vale do Paraíba
 
 link_cidade = 'https://servicodados.ibge.gov.br/api/v1/localidades/mesorregioes/3513/municipios'
-
+link_cidade = 'https://servicodados.ibge.gov.br/api/v1/localidades/estados/sp/municipios'
 requisicao_cidades = requests.get(link_cidade)
 
 cidades_dic = (requisicao_cidades.json())
