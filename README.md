@@ -1,4 +1,4 @@
-# Previssao_tempo_Dataside
+# Previsão_tempo_Dataside
 Objetivo
 Avaliar conhecimentos nas linguagens Python e SQL e na engine de processamento Apache Spark.
 Descrição
